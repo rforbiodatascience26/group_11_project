@@ -78,7 +78,7 @@ view(brca)
 
 ## Visual
 
-### Bharthi
+### Bharti
 
 ### Pratyush
 
