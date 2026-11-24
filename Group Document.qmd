@@ -75,3 +75,15 @@ write_csv(brca, "data/brca_clean.csv")
 ```{r}
 view(brca)
 ```
+
+## Visual
+
+### Bharthi
+
+### Pratyush
+
+### Sanjay
+
+### Jithin
+
+### Maria
