@@ -147,7 +147,7 @@ brca |>
 
 ### Maria
 
-<<<<<<< HEAD
+
 ## Graphs
 
 ### Bharati
@@ -183,4 +183,4 @@ glimpse(brca_aug)
 # Opening the spreadsheet-style view
 View(brca_aug |> select(os_months, os_years, os_status, event_os))
 ```
->>>>>>> b3fd694f2c34e86649461f8121f7fda726db2ec3
+
