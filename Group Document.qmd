@@ -101,6 +101,27 @@ view(brca)
 
 ### Bharati
 
+#### Creating cancer_type_short
+
+```{r}
+brca <- brca |>
+  mutate(
+    cancer_type_short = case_when(
+      cancer_type_detailed == "Breast Invasive Ductal Carcinoma" ~ "IDC",
+      cancer_type_detailed == "Breast Invasive Lobular Carcinoma" ~ "ILC",
+      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~ "Mixed Ductal/Lobular",
+      TRUE ~ "Other"
+    ),
+    cancer_type_short = factor(
+      cancer_type_short,
+      levels = c("IDC", "Mixed Ductal/Lobular", "ILC", "Other")
+    )
+  )
+
+brca |>
+  count(cancer_type_short, sort = TRUE)
+```
+
 ### Pratyush
 
 ### Sanjay
