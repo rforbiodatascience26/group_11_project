@@ -148,18 +148,6 @@ brca |>
 
 ### Maria
 
-## Graphs
-
-### Bharati
-
-### Pratyush
-
-### Sanjay
-
-### Jithin
-
-# \### Maria
-
 ```{r}
 library(tidyverse)
 
@@ -183,3 +171,15 @@ glimpse(brca_aug)
 # Opening the spreadsheet-style view
 View(brca_aug |> select(os_months, os_years, os_status, event_os))
 ```
+
+## Graphs
+
+### Bharati
+
+### Pratyush
+
+### Sanjay
+
+### Jithin
+
+### Maria
