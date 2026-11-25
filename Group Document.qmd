@@ -79,7 +79,6 @@ view(brca)
 ## Visual
 
 ### Bharati
-
 #### Creating cancer_type_short column
 
 ```{r}
@@ -103,8 +102,71 @@ brca |>
 
 ### Pratyush
 
+```{r}
+# receptor_profile: HR+/HER2-, HER2+, Triple-Negative
+brca <- brca |>
+  mutate(
+    receptor_profile = case_when(
+      her2_status == "Positive" ~ "HER2+",
+      er_status == "Negative" & pr_status == "Negative" &
+        her2_status == "Negative" ~ "Triple-Negative",
+      (er_status == "Positive" | pr_status == "Positive") &
+        her2_status == "Negative" ~ "HR+/HER2-",
+      .default = NA_character_
+    ),
+    receptor_profile = factor(
+      receptor_profile,
+      levels = c("HR+/HER2-", "HER2+", "Triple-Negative")
+    )
+  ) 
+```
+
 ### Sanjay
+
+Creating a new variable how many therapies each patient has received. There are 3 therapies in the data set, hormone therapy, chemotherapy and radio therapy. Each of them are labelled as "Yes" or "No". Yes gives a true value (1) and No gives a false value (0). Adding these 3 will give the number of therapies from 0 to 3. That number is converted using a factor() into an ordered category labelled "None","Single","Double", "Triple". Patients with missing data will be given "NA" instead of "None" to ensure missing data is not confused with no treatment.
+
+```{r}
+library(tidyverse)
+
+brca <- brca |>
+  mutate(
+    treatment_n = (chemotherapy == "Yes") +
+                  (hormone_therapy == "Yes") +
+                  (radio_therapy == "Yes"),
+    treatment_burden = factor(treatment_n,
+                              levels = 0:3,
+                              labels = c("None", "Single", "Dual", "Triple"),
+                              ordered = TRUE)
+  )
+
+brca |> 
+  count(treatment_burden)
+```
 
 ### Jithin
 
 ### Maria
+
+```{r}
+library(tidyverse)
+
+# Load cleaned dataset (CSV drops factor ordering, which is fine for our variables)
+brca_clean <- read_csv("data/brca_clean.csv")
+
+brca_aug <- brca_clean |>
+  mutate(
+    # Converting survival to years & creating a binary mortality outcome (1 = Deceased, 0 = Living)
+    os_years = os_months / 12,
+    event_os = case_when(
+      str_detect(os_status, regex("deceased|1", ignore_case = TRUE)) ~ 1,
+      str_detect(os_status, regex("living|0", ignore_case = TRUE))   ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+
+# Quick check in the console (shows column names, data types, and first values)
+glimpse(brca_aug)
+
+# Opening the spreadsheet-style view
+View(brca_aug |> select(os_months, os_years, os_status, event_os))
+```
