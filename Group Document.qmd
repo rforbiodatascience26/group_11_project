@@ -79,6 +79,7 @@ view(brca)
 ## Visual
 
 ### Bharati
+
 #### Creating cancer_type_short column
 
 ```{r}
