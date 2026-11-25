@@ -66,7 +66,21 @@ brca |> summarise(across(everything(), ~ sum(is.na(.)))) |>
   arrange(desc(n_missing))
 ```
 
-## Augmenting the data
+## Writing a new clean csv
+
+```{r}
+write_csv(brca, "data/brca_clean.csv")
+```
+
+```{r}
+view(brca)
+```
+
+## Visual
+
+### Bharati
+
+### Pratyush
 
 ```{r}
 # receptor_profile: HR+/HER2-, HER2+, Triple-Negative
@@ -86,22 +100,6 @@ brca <- brca |>
     )
   ) 
 ```
-
-## Writing a new clean csv
-
-```{r}
-write_csv(brca, "data/brca_clean.csv")
-```
-
-```{r}
-view(brca)
-```
-
-## Visual
-
-### Bharati
-
-### Pratyush
 
 ### Sanjay
 
