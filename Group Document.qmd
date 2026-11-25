@@ -66,7 +66,21 @@ brca |> summarise(across(everything(), ~ sum(is.na(.)))) |>
   arrange(desc(n_missing))
 ```
 
-## Augmenting the data
+## Writing a new clean csv
+
+```{r}
+write_csv(brca, "data/brca_clean.csv")
+```
+
+```{r}
+view(brca)
+```
+
+## Visual
+
+### Bharati
+
+### Pratyush
 
 ```{r}
 # receptor_profile: HR+/HER2-, HER2+, Triple-Negative
@@ -86,43 +100,6 @@ brca <- brca |>
     )
   ) 
 ```
-
-## Writing a new clean csv
-
-```{r}
-write_csv(brca, "data/brca_clean.csv")
-```
-
-```{r}
-view(brca)
-```
-
-## Visual
-
-### Bharati
-
-#### Creating cancer_type_short
-
-```{r}
-brca <- brca |>
-  mutate(
-    cancer_type_short = case_when(
-      cancer_type_detailed == "Breast Invasive Ductal Carcinoma" ~ "IDC",
-      cancer_type_detailed == "Breast Invasive Lobular Carcinoma" ~ "ILC",
-      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~ "Mixed Ductal/Lobular",
-      TRUE ~ "Other"
-    ),
-    cancer_type_short = factor(
-      cancer_type_short,
-      levels = c("IDC", "Mixed Ductal/Lobular", "ILC", "Other")
-    )
-  )
-
-brca |>
-  count(cancer_type_short, sort = TRUE)
-```
-
-### Pratyush
 
 ### Sanjay
 
