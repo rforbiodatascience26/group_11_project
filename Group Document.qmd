@@ -79,6 +79,26 @@ view(brca)
 ## Visual
 
 ### Bharati
+#### Creating cancer_type_short column
+
+```{r}
+brca <- brca |>
+  mutate(
+    cancer_type_short = case_when(
+      cancer_type_detailed == "Breast Invasive Ductal Carcinoma" ~ "IDC",
+      cancer_type_detailed == "Breast Invasive Lobular Carcinoma" ~ "ILC",
+      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~ "Mixed Ductal/Lobular",
+      TRUE ~ "Other"
+    ),
+    cancer_type_short = factor(
+      cancer_type_short,
+      levels = c("IDC", "Mixed Ductal/Lobular", "ILC", "Other")
+    )
+  )
+
+brca |>
+  count(cancer_type_short, sort = TRUE)
+```
 
 ### Pratyush
 
@@ -127,6 +147,26 @@ brca |>
 ```
 
 ### Sanjay
+
+Creating a new variable how many therapies each patient has received. There are 3 therapies in the data set, hormone therapy, chemotherapy and radio therapy. Each of them are labelled as "Yes" or "No". Yes gives a true value (1) and No gives a false value (0). Adding these 3 will give the number of therapies from 0 to 3. That number is converted using a factor() into an ordered category labelled "None","Single","Double", "Triple". Patients with missing data will be given "NA" instead of "None" to ensure missing data is not confused with no treatment.
+
+```{r}
+library(tidyverse)
+
+brca <- brca |>
+  mutate(
+    treatment_n = (chemotherapy == "Yes") +
+                  (hormone_therapy == "Yes") +
+                  (radio_therapy == "Yes"),
+    treatment_burden = factor(treatment_n,
+                              levels = 0:3,
+                              labels = c("None", "Single", "Dual", "Triple"),
+                              ordered = TRUE)
+  )
+
+brca |> 
+  count(treatment_burden)
+```
 
 ### Jithin
 
