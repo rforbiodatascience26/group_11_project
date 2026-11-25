@@ -58,7 +58,7 @@ brca <- brca_raw |>
   mutate(age_group = cut(age_at_diagnosis, breaks = seq(20, 100, by = 10)))
 ```
 
-The next step is checking if the data has any missingness
+The next step is checking if the data has any missing values
 
 ```{r}
 brca |> summarise(across(everything(), ~ sum(is.na(.)))) |>
@@ -131,3 +131,27 @@ brca |>
 ### Jithin
 
 ### Maria
+
+```{r}
+library(tidyverse)
+
+# Load cleaned dataset (CSV drops factor ordering, which is fine for our variables)
+brca_clean <- read_csv("data/brca_clean.csv")
+
+brca_aug <- brca_clean |>
+  mutate(
+    # Converting survival to years & creating a binary mortality outcome (1 = Deceased, 0 = Living)
+    os_years = os_months / 12,
+    event_os = case_when(
+      str_detect(os_status, regex("deceased|1", ignore_case = TRUE)) ~ 1,
+      str_detect(os_status, regex("living|0", ignore_case = TRUE))   ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+
+# Quick check in the console (shows column names, data types, and first values)
+glimpse(brca_aug)
+
+# Opening the spreadsheet-style view
+View(brca_aug |> select(os_months, os_years, os_status, event_os))
+```
