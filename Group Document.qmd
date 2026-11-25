@@ -101,6 +101,31 @@ brca <- brca |>
   ) 
 ```
 
+```{r}
+#| fig-width: 9
+#| fig-height: 5
+brca |>
+  filter(!is.na(receptor_profile),
+         !is.na(inferred_menopausal_state),
+         !is.na(hormone_therapy)) |>
+  mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
+                                            levels = c("Pre", "Post"))) |>
+  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ receptor_profile) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(end = 0.8) +
+  labs(
+    title = "Hormone therapy use by menopausal state and receptor profile",
+    subtitle = "METABRIC cohort; patients with missing data excluded",
+    x = "Menopausal state",
+    y = "Proportion of patients",
+    fill = "Hormone therapy",
+    caption = "Source: METABRIC"
+  ) +
+  theme_minimal() 
+```
+
 ### Sanjay
 
 ### Jithin
