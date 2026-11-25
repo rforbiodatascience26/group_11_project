@@ -201,7 +201,59 @@ View(brca_aug |> select(os_months, os_years, os_status, event_os))
 
 ### Bharati
 
+```{r}
+brca |>
+  drop_na(type_of_breast_surgery, cancer_type_short, cellularity) |>
+  ggplot(aes(x = cancer_type_short, fill = type_of_breast_surgery)) +
+  geom_bar(position = "fill", width = 0.7) +
+  facet_wrap(
+    ~ cellularity,
+    labeller = labeller(cellularity = \(x) paste("Cellularity:", x))
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(option = "D", begin = 0.2, end = 0.8) +
+  labs(
+    title = "Breast Surgery Type Across Cancer Subtypes and Tumor Cellularity",
+    subtitle = "Proportion of Mastectomy vs. Breast Conserving surgery (METABRIC cohort)",
+    x = "Cancer Type",
+    y = "Proportion of Patients",
+    fill = "Surgery Type"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    legend.position = "bottom",
+    panel.grid.major.x = element_blank(),
+    strip.text = element_text(face = "bold")
+  )
+```
+
 ### Pratyush
+
+```{r}
+#| fig-width: 9
+#| fig-height: 5
+brca |>
+  filter(!is.na(receptor_profile),
+         !is.na(inferred_menopausal_state),
+         !is.na(hormone_therapy)) |>
+  mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
+                                            levels = c("Pre", "Post"))) |>
+  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ receptor_profile) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(end = 0.8) +
+  labs(
+    title = "Hormone therapy use by menopausal state and receptor profile",
+    subtitle = "METABRIC cohort; patients with missing data excluded",
+    x = "Menopausal state",
+    y = "Proportion of patients",
+    fill = "Hormone therapy",
+    caption = "Source: METABRIC"
+  ) +
+  theme_minimal()
+```
 
 ### Sanjay
 
