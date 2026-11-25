@@ -100,7 +100,8 @@ brca <- brca |>
                               ordered = TRUE)
   )
 
-brca |> count(treatment_burden)
+brca |> 
+  count(treatment_burden)
 ```
 
 ### Jithin
