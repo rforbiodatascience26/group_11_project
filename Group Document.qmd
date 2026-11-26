@@ -123,31 +123,6 @@ brca <- brca |>
   ) 
 ```
 
-```{r}
-#| fig-width: 9
-#| fig-height: 5
-brca |>
-  filter(!is.na(receptor_profile),
-         !is.na(inferred_menopausal_state),
-         !is.na(hormone_therapy)) |>
-  mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
-                                            levels = c("Pre", "Post"))) |>
-  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
-  geom_bar(position = "fill") +
-  facet_wrap(~ receptor_profile) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_fill_viridis_d(end = 0.8) +
-  labs(
-    title = "Hormone therapy use by menopausal state and receptor profile",
-    subtitle = "METABRIC cohort; patients with missing data excluded",
-    x = "Menopausal state",
-    y = "Proportion of patients",
-    fill = "Hormone therapy",
-    caption = "Source: METABRIC"
-  ) +
-  theme_minimal() 
-```
-
 ### Sanjay
 
 Creating a new variable how many therapies each patient has received. There are 3 therapies in the data set, hormone therapy, chemotherapy and radio therapy. Each of them are labelled as "Yes" or "No". Yes gives a true value (1) and No gives a false value (0). Adding these 3 will give the number of therapies from 0 to 3. That number is converted using a factor() into an ordered category labelled "None","Single","Double", "Triple". Patients with missing data will be given "NA" instead of "None" to ensure missing data is not confused with no treatment.
