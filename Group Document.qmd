@@ -85,20 +85,18 @@ view(brca)
 ```{r}
 # receptor_profile: HR+/HER2-, HER2+, Triple-Negative
 brca <- brca |>
-  mutate(
-    receptor_profile = case_when(
-      her2_status == "Positive" ~ "HER2+",
-      er_status == "Negative" & pr_status == "Negative" &
-        her2_status == "Negative" ~ "Triple-Negative",
-      (er_status == "Positive" | pr_status == "Positive") &
-        her2_status == "Negative" ~ "HR+/HER2-",
-      .default = NA_character_
-    ),
-    receptor_profile = factor(
-      receptor_profile,
-      levels = c("HR+/HER2-", "HER2+", "Triple-Negative")
-    )
-  ) 
+  mutate(receptor_profile = case_when(
+           her2_status == "Positive" ~ "HER2+",
+           er_status == "Negative" &
+             pr_status == "Negative" &
+             her2_status == "Negative" ~ "Triple-Negative",
+           (er_status == "Positive" | pr_status == "Positive") &
+             her2_status == "Negative" ~ "HR+/HER2-",
+           .default = NA_character_),
+         receptor_profile = factor(receptor_profile,
+                                   levels = c("HR+/HER2-",
+                                              "HER2+",
+                                              "Triple-Negative")))
 ```
 
 ### Sanjay
