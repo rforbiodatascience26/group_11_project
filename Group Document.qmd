@@ -104,23 +104,23 @@ brca |>
 
 ### Pratyush
 
+Creating a new variable that groups patients by receptor status, using the three columns `er_status`, `pr_status` and `her2_status`, each labelled "Positive" or "Negative". Patients with a positive HER2 status are labelled "HER2+". Patients negative for all three receptors are labelled "Triple-Negative". Patients who are HER2 negative and positive for ER or PR are labelled "HR+/HER2-". The result is converted using `factor()` into an ordered category. Patients with missing data are given "NA" because their group cannot be decided.
+
 ```{r}
 # receptor_profile: HR+/HER2-, HER2+, Triple-Negative
 brca <- brca |>
-  mutate(
-    receptor_profile = case_when(
-      her2_status == "Positive" ~ "HER2+",
-      er_status == "Negative" & pr_status == "Negative" &
-        her2_status == "Negative" ~ "Triple-Negative",
-      (er_status == "Positive" | pr_status == "Positive") &
-        her2_status == "Negative" ~ "HR+/HER2-",
-      .default = NA_character_
-    ),
-    receptor_profile = factor(
-      receptor_profile,
-      levels = c("HR+/HER2-", "HER2+", "Triple-Negative")
-    )
-  ) 
+  mutate(receptor_profile = case_when(
+           her2_status == "Positive" ~ "HER2+",
+           er_status == "Negative" &
+             pr_status == "Negative" &
+             her2_status == "Negative" ~ "Triple-Negative",
+           (er_status == "Positive" | pr_status == "Positive") &
+             her2_status == "Negative" ~ "HR+/HER2-",
+           .default = NA_character_),
+         receptor_profile = factor(receptor_profile,
+                                   levels = c("HR+/HER2-",
+                                              "HER2+",
+                                              "Triple-Negative")))
 ```
 
 ### Sanjay
@@ -246,21 +246,22 @@ brca |>
          !is.na(hormone_therapy)) |>
   mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
                                             levels = c("Pre", "Post"))) |>
-  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
+  ggplot(aes(x = inferred_menopausal_state,
+             fill = hormone_therapy)) +
   geom_bar(position = "fill") +
   facet_wrap(~ receptor_profile) +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_viridis_d(end = 0.8) +
-  labs(
-    title = "Hormone therapy use by menopausal state and receptor profile",
-    subtitle = "METABRIC cohort; patients with missing data excluded",
-    x = "Menopausal state",
-    y = "Proportion of patients",
-    fill = "Hormone therapy",
-    caption = "Source: METABRIC"
-  ) +
+  labs(title = "Hormone therapy use by menopausal state and receptor profile",
+       subtitle = "METABRIC cohort; patients with missing data excluded",
+       x = "Menopausal state",
+       y = "Proportion of patients",
+       fill = "Hormone therapy",
+       caption = "Source: METABRIC") +
   theme_minimal()
 ```
+
+Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumours.
 
 ### Sanjay
 
