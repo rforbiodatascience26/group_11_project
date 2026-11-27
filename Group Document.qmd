@@ -7,8 +7,8 @@ editor: visual
 ## Loading Libraries
 
 ```{r}
-library(tidyverse)
-library(janitor)
+library("tidyverse")
+library("janitor")
 library("patchwork")
 library("broom")
 ```
