@@ -176,19 +176,9 @@ The "mutation_count" column reflects the number of somatic mutations in each tum
 
 ```{r}
 brca <- brca |>
-  mutate(
-    mutation_burden_group = case_when( mutation_count >= 8 ~ "High",
-                                       mutation_count >= 4 ~ "Moderate",
-                                       mutation_count >= 1 ~ "Low",
-                                       .default = NA_character_
-                                       ),
-    mutation_burden_group = cut(mutation_count,
+    mutate(mutation_burden_group = cut(mutation_count,
                                 breaks = c(0, 3, 7, Inf),
-                                labels = c("Low", "Moderate", "High")
-                                )
-    )
-
-view(brca)
+                                labels = c("Low", "Moderate", "High")))
 ```
 
 Grouping and summarizing the data based on the mutated terms allows us to confirm whether the mutation has been executed properly based on the output.
@@ -196,11 +186,11 @@ Grouping and summarizing the data based on the mutated terms allows us to confir
 ```{r}
 brca |>
   group_by(mutation_burden_group) |>
-  summarise(
-    n   = n(),
-    min = min(mutation_count, na.rm = TRUE),
-    max = max(mutation_count, na.rm = TRUE)
-  )
+  summarise(n_patients = n(),
+            min_mutations = min(mutation_count, 
+                      na.rm = TRUE),
+            max_mutations = max(mutation_count, 
+                      na.rm = TRUE))
 ```
 
 ### Maria
@@ -326,20 +316,16 @@ ggplot(plot_df,
 ```{r}
 p_status <- brca |>
   filter(!is.na(primary_tumor_laterality),
-         !is.na(vital_status)
-         ) |>
+         !is.na(vital_status)) |>
   ggplot(aes(x = primary_tumor_laterality,
-             fill = vital_status
-             )
-         ) +
+             fill = vital_status)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_viridis_d() +
   labs(x = "Tumour laterality",
        y = "Proportion of patients",
        fill = "Vital status",
-       title = "A. Vital status by tumour side"
-       )
+       title = "A. Vital status by tumour side")
 
 p_status
 ```
@@ -347,21 +333,16 @@ p_status
 ```{r}
 p_size <- brca |>
   filter(!is.na(primary_tumor_laterality),
-         !is.na(vital_status)
-         ) |>
+         !is.na(vital_status)) |>
   ggplot(aes(x = primary_tumor_laterality,
-             y = tumor_size
-             )
-         ) +
+             y = tumor_size)) +
   geom_violin() +
   scale_y_log10() +
   geom_boxplot(width = 0.15,
-               outlier.shape = NA
-               ) +
+               outlier.shape = NA) +
   labs(x = "Tumour laterality",
        y = "Tumour size (mm)",
-       title = "B. Tumour size by tumour side"
-       )
+       title = "B. Tumour size by tumour side")
 
 p_size
 ```
@@ -369,8 +350,7 @@ p_size
 ```{r}
 laterality_plot <- p_status + p_size +
   plot_annotation(title = "Does tumour laterality relate to clinical severity?",
-                  caption = "METABRIC cohort; patients with missing values excluded per panel"
-                  )
+                  caption = "METABRIC cohort; patients with missing values excluded per panel")
 
 laterality_plot
 ```
