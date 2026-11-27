@@ -10,6 +10,7 @@ editor: visual
 library(tidyverse)
 library(janitor)
 library("patchwork")
+library("broom")
 ```
 
 ## Loading the data
@@ -81,7 +82,7 @@ view(brca)
 
 ### Bharati
 
-#### Creating cancer_type_short column
+This code groups the eight detailed cancer types into four simpler categories (`IDC`, `ILC`, `Mixed Ductal/Lobular`, and `Other`) in a new `cancer_type_short` column. It then converts the column into a factor with a set order and counts the number of patients in each group.
 
 ```{r}
 brca <- brca |>
@@ -89,8 +90,9 @@ brca <- brca |>
     cancer_type_short = case_when(
       cancer_type_detailed == "Breast Invasive Ductal Carcinoma" ~ "IDC",
       cancer_type_detailed == "Breast Invasive Lobular Carcinoma" ~ "ILC",
-      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~ "Mixed Ductal/Lobular",
-      TRUE ~ "Other"
+      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~
+        "Mixed Ductal/Lobular",
+      .default = "Other"
     ),
     cancer_type_short = factor(
       cancer_type_short,
@@ -99,53 +101,29 @@ brca <- brca |>
   )
 
 brca |>
-  count(cancer_type_short, sort = TRUE)
+  count(cancer_type_short,
+        sort = TRUE)
 ```
 
 ### Pratyush
 
+Creating a new variable that groups patients by receptor status, using the three columns `er_status`, `pr_status` and `her2_status`, each labelled "Positive" or "Negative". Patients with a positive HER2 status are labelled "HER2+". Patients negative for all three receptors are labelled "Triple-Negative". Patients who are HER2 negative and positive for ER or PR are labelled "HR+/HER2-". The result is converted using `factor()` into an ordered category. Patients with missing data are given "NA" because their group cannot be decided.
+
 ```{r}
 # receptor_profile: HR+/HER2-, HER2+, Triple-Negative
 brca <- brca |>
-  mutate(
-    receptor_profile = case_when(
-      her2_status == "Positive" ~ "HER2+",
-      er_status == "Negative" & pr_status == "Negative" &
-        her2_status == "Negative" ~ "Triple-Negative",
-      (er_status == "Positive" | pr_status == "Positive") &
-        her2_status == "Negative" ~ "HR+/HER2-",
-      .default = NA_character_
-    ),
-    receptor_profile = factor(
-      receptor_profile,
-      levels = c("HR+/HER2-", "HER2+", "Triple-Negative")
-    )
-  ) 
-```
-
-```{r}
-#| fig-width: 9
-#| fig-height: 5
-brca |>
-  filter(!is.na(receptor_profile),
-         !is.na(inferred_menopausal_state),
-         !is.na(hormone_therapy)) |>
-  mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
-                                            levels = c("Pre", "Post"))) |>
-  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
-  geom_bar(position = "fill") +
-  facet_wrap(~ receptor_profile) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_fill_viridis_d(end = 0.8) +
-  labs(
-    title = "Hormone therapy use by menopausal state and receptor profile",
-    subtitle = "METABRIC cohort; patients with missing data excluded",
-    x = "Menopausal state",
-    y = "Proportion of patients",
-    fill = "Hormone therapy",
-    caption = "Source: METABRIC"
-  ) +
-  theme_minimal() 
+  mutate(receptor_profile = case_when(
+           her2_status == "Positive" ~ "HER2+",
+           er_status == "Negative" &
+             pr_status == "Negative" &
+             her2_status == "Negative" ~ "Triple-Negative",
+           (er_status == "Positive" | pr_status == "Positive") &
+             her2_status == "Negative" ~ "HR+/HER2-",
+           .default = NA_character_),
+         receptor_profile = factor(receptor_profile,
+                                   levels = c("HR+/HER2-",
+                                              "HER2+",
+                                              "Triple-Negative")))
 ```
 
 ### Sanjay
@@ -195,28 +173,19 @@ brca |>
 
 ### Maria
 
+To get the survival variables ready for modeling, we created two new columns from the cleaned clinical data: `os_years` and `event_os`. Since overall survival was originally recorded in months, we divided `os_months` by 12 so the timeline is easier to interpret in years. We also converted the text labels in `os_status` into a simple binary outcome (`event_os`), coding deceased patients as `1` (`n = 1,144`) and living patients as `0` (`n = 837`), while keeping the `528` missing entries as `NA` so they are automatically excluded from our models.
+
 ```{r}
-library(tidyverse)
-
-# Load cleaned dataset (CSV drops factor ordering, which is fine for our variables)
-brca_clean <- read_csv("data/brca_clean.csv")
-
-brca_aug <- brca_clean |>
+# Convert survival time to years and create binary mortality outcome
+brca <- brca |>
   mutate(
-    # Converting survival to years & creating a binary mortality outcome (1 = Deceased, 0 = Living)
     os_years = os_months / 12,
     event_os = case_when(
       str_detect(os_status, regex("deceased|1", ignore_case = TRUE)) ~ 1,
-      str_detect(os_status, regex("living|0", ignore_case = TRUE))   ~ 0,
+      str_detect(os_status, regex("living|0", ignore_case = TRUE)) ~ 0,
       TRUE ~ NA_real_
     )
   )
-
-# Quick check in the console (shows column names, data types, and first values)
-glimpse(brca_aug)
-
-# Opening the spreadsheet-style view
-View(brca_aug |> select(os_months, os_years, os_status, event_os))
 ```
 
 ## Graphs
@@ -225,29 +194,26 @@ View(brca_aug |> select(os_months, os_years, os_status, event_os))
 
 ```{r}
 brca |>
-  drop_na(type_of_breast_surgery, cancer_type_short, cellularity) |>
-  ggplot(aes(x = cancer_type_short, fill = type_of_breast_surgery)) +
-  geom_bar(position = "fill", width = 0.7) +
-  facet_wrap(
-    ~ cellularity,
-    labeller = labeller(cellularity = \(x) paste("Cellularity:", x))
-  ) +
+  drop_na(type_of_breast_surgery,
+          cancer_type_short,
+          cellularity) |>
+  ggplot(aes(x = cancer_type_short,
+             fill = type_of_breast_surgery)) +
+  geom_bar(position = "fill",
+           width = 0.65,
+           color = "white") +
+  facet_wrap(~ cellularity) +
   scale_y_continuous(labels = scales::percent) +
-  scale_fill_viridis_d(option = "D", begin = 0.2, end = 0.8) +
-  labs(
-    title = "Breast Surgery Type Across Cancer Subtypes and Tumor Cellularity",
-    subtitle = "Proportion of Mastectomy vs. Breast Conserving surgery (METABRIC cohort)",
-    x = "Cancer Type",
-    y = "Proportion of Patients",
-    fill = "Surgery Type"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 30, hjust = 1),
-    legend.position = "bottom",
-    panel.grid.major.x = element_blank(),
-    strip.text = element_text(face = "bold")
-  )
+  scale_fill_manual(values = c("plum", "lightpink")) +
+  labs(title = "Surgery Type by Cancer Type & Cellularity",
+       x = NULL,
+       y = "Patients (%)",
+       fill = "Surgery") +
+  theme_minimal(base_size = 10) +
+  theme(axis.text.x = element_text(size = 8,
+                                   angle = 30,
+                                   hjust = 1),
+        legend.position = "bottom")
 ```
 
 ### Pratyush
@@ -261,21 +227,22 @@ brca |>
          !is.na(hormone_therapy)) |>
   mutate(inferred_menopausal_state = factor(inferred_menopausal_state,
                                             levels = c("Pre", "Post"))) |>
-  ggplot(aes(x = inferred_menopausal_state, fill = hormone_therapy)) +
+  ggplot(aes(x = inferred_menopausal_state,
+             fill = hormone_therapy)) +
   geom_bar(position = "fill") +
   facet_wrap(~ receptor_profile) +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_viridis_d(end = 0.8) +
-  labs(
-    title = "Hormone therapy use by menopausal state and receptor profile",
-    subtitle = "METABRIC cohort; patients with missing data excluded",
-    x = "Menopausal state",
-    y = "Proportion of patients",
-    fill = "Hormone therapy",
-    caption = "Source: METABRIC"
-  ) +
+  labs(title = "Hormone therapy use by menopausal state and receptor profile",
+       subtitle = "METABRIC cohort; patients with missing data excluded",
+       x = "Menopausal state",
+       y = "Proportion of patients",
+       fill = "Hormone therapy",
+       caption = "Source: METABRIC") +
   theme_minimal()
 ```
+
+Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumors.
 
 ### Sanjay
 
@@ -356,3 +323,95 @@ laterality_plot
 ```
 
 ### Maria
+
+To see how age, mutation burden, and treatment intensity affect survival across different breast cancer subtypes, we fit separate logistic regression models (`glm()`) for each PAM50 subtype using `purrr` and plotted the resulting Odds Ratios and 95% confidence intervals.
+
+We adapted the functional programming workflow from Lab 6 (`nest()`, `map()`, and `unnest()`) for this. Instead of splitting the data across thousands of genes, we nested the dataset into six groups by `pam50_subtype` and fit a separate model to each using `purrr`. In Lab 6, the outcome was continuous, so linear regression (`lm()`) was used. Here, our survival outcome (`event_os`) is binary (`1 = Deceased`, `0 = Living`), so we used logistic regression (`glm(..., family = binomial)`). We also set `exponentiate = TRUE` inside `broom::tidy()` to convert raw log-odds into Odds Ratios, which are much easier to interpret. Finally, while a volcano plot works well in Lab 6 for screening thousands of genes at once, a forest plot (`geom_linerange()` + `geom_point()`) is a better choice here. With only 18 subtype-level estimates, a forest plot lets us directly compare exact effect sizes and 95% confidence intervals side-by-side against the dashed neutral line (`OR = 1`).
+
+Any point to the right of the dashed line shows higher odds of mortality, while points to the left indicate lower odds, with horizontal bars showing statistical certainty.
+
+```{r}
+#| fig-width: 7
+#| fig-height: 5
+#| warning: false
+#| message: false
+
+# Fit logistic regression models predicting mortality across PAM50 subtypes
+subtype_models <- brca |>
+  filter(!is.na(pam50_subtype),
+         pam50_subtype != "NC") |>
+  drop_na(event_os,
+          treatment_n,
+          mutation_count,
+          age_at_diagnosis) |>
+  group_by(pam50_subtype) |>
+  nest() |>
+  mutate(
+    model = map(data,
+                ~ glm(event_os ~ age_at_diagnosis + mutation_count + treatment_n,
+                      data = .x,
+                      family = binomial)),
+    tidied = map(model,
+                 ~ tidy(.x,
+                        conf.int = TRUE,
+                        exponentiate = TRUE))
+  ) |>
+  unnest(tidied) |>
+  filter(term != "(Intercept)") |>
+  mutate(
+    term_clean = factor(
+      case_when(
+        term == "age_at_diagnosis" ~ "Age at Diagnosis\n(per year)",
+        term == "mutation_count" ~ "Mutation Count\n(per mutation)",
+        term == "treatment_n" ~ "Treatment Burden\n(per therapy)",
+        TRUE ~ term
+      ),
+      levels = c(
+        "Treatment Burden\n(per therapy)",
+        "Mutation Count\n(per mutation)",
+        "Age at Diagnosis\n(per year)"
+      )
+    )
+  )
+
+# Forest plot of odds ratios and 95% confidence intervals across PAM50 subtypes
+subtype_models |>
+  ggplot(aes(x = estimate,
+             y = term_clean,
+             color = pam50_subtype)) +
+  geom_vline(xintercept = 1,
+             linetype = "dashed",
+             color = "grey45") +
+  geom_linerange(aes(xmin = conf.low,
+                     xmax = conf.high),
+                 position = position_dodge(width = 0.7),
+                 linewidth = 0.8) +
+  geom_point(position = position_dodge(width = 0.7),
+             size = 2.5) +
+  scale_x_log10(breaks = c(0.6, 0.8, 1.0, 1.2, 1.5, 1.8)) +
+  scale_color_viridis_d(name = "Subtype:",
+                        end = 0.9) +
+  guides(color = guide_legend(nrow = 2,
+                              byrow = TRUE)) +
+  labs(
+    title = "Mortality Predictors Across PAM50 Subtypes",
+    subtitle = "Odds ratios (95% CI) from logistic regression; dashed line: OR = 1",
+    x = "Odds Ratio (log10 scale)",
+    y = NULL,
+    caption = "Source: METABRIC Cohort | Outcome: Overall Mortality (1 = Deceased)"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(face = "bold"),
+    legend.position = "top",
+    legend.justification = "left",
+    panel.grid.minor = element_blank()
+  )
+```
+
+Results:
+
+Across every subtype, older age at diagnosis consistently increases mortality risk (`OR = 1.03–1.09` per year), whereas mutation count has little effect except in Normal-like tumors (`OR = 1.12`, 95% CI: `1.01–1.27`). Most notably, higher cumulative treatment burden seems to significantly mortality odds in LumA patients (`OR = 0.72`, 95% CI: `0.57–0.89`), suggesting that LumA tumors respond especially well to combined therapies compared to more aggressive subtypes like Her2 or claudin-low, where the confidence intervals cross 1.
+
+\
