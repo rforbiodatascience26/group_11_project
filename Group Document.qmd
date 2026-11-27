@@ -22,7 +22,7 @@ brca_raw <- read_csv("data/Breast Cancer METABRIC.csv",
 
 ## Cleaning Data
 
-This step takes the raw METABRIC data and makes it ready for analysis. First, `clean_names()` and `rename()` give the columns short, consistent names without spaces, such as `age_at_diagnosis` and `os_months`. Next, the `Positve` typo in the ER (IHC) column is corrected to `Positive`, and the `sex` and `cancer_type` columns are dropped because they hold almost the same value for every patient and add no information. Then the categorical variables (such as ER status, HER2 status, chemotherapy and tumour subtype) are converted to factors so R treats them as groups rather than text. Cohort, histologic grade and tumour stage, which were stored as numeric codes, are converted too, with grade and stage as ordered factors and cellularity ordered Low \< Moderate \< High. Finally, a new `age_group` column bins patients’ ages into 10-year intervals with `cut()`. Missing values are left as `NA`, and no rows are removed.
+This step takes the raw METABRIC data and makes it ready for analysis. First, `clean_names()` and `rename()` give the columns short, consistent names without spaces, such as `age_at_diagnosis` and `os_months`. Next, the `Positve` typo in the ER (IHC) column is corrected to `Positive`, and the `sex` and `cancer_type` columns are dropped because they hold almost the same value for every patient and add no information. Then the categorical variables (such as ER status, HER2 status, chemotherapy and tumor subtype) are converted to factors so R treats them as groups rather than text. Cohort, histologic grade and tumor stage, which were stored as numeric codes, are converted too, with grade and stage as ordered factors and cellularity ordered Low \< Moderate \< High. Finally, a new `age_group` column bins patients’ ages into 10-year intervals with `cut()`. Missing values are left as `NA`, and no rows are removed.
 
 ```{r}
 # 2. Clean
@@ -154,12 +154,12 @@ The "mutation_count" column reflects the number of somatic mutations in each tum
 
 ```{r}
 brca <- brca |>
-    mutate(mutation_burden_group = cut(mutation_count,
+  mutate(mutation_burden_group = cut(mutation_count,
                                 breaks = c(0, 3, 7, Inf),
                                 labels = c("Low", "Moderate", "High")))
 ```
 
-Grouping and summarizing the data based on the mutated terms allows us to confirm whether the mutation has been executed properly based on the output.
+We count patients per group (categorized based on their qualitative mutation burden) and show the minimum and maximum mutation count in each to ensure binning was executed correctly.
 
 ```{r}
 brca |>
@@ -289,35 +289,42 @@ p_status <- brca |>
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_viridis_d() +
-  labs(x = "Tumour laterality",
+  labs(x = "Tumor laterality",
        y = "Proportion of patients",
        fill = "Vital status",
-       title = "A. Vital status by tumour side")
+       title = "A. Vital status by tumor side") +
+  theme(legend.position = "bottom",
+        legend.title.position = "top")
 
 p_status
 ```
 
+This bar graph compares the vital status of patients having left-sided tumors vs right-sided tumors. From the figure, we can interpret that the patients with left-sided tumors have a slightly higher mortality rate from the disease itself (not external factors). However, this difference is small and does not necessarily indicate any meaningful or conclusive link between severity and laterality of the tumor.
+
 ```{r}
 p_size <- brca |>
   filter(!is.na(primary_tumor_laterality),
-         !is.na(vital_status)) |>
+         !is.na(tumor_size)) |>
   ggplot(aes(x = primary_tumor_laterality,
              y = tumor_size)) +
   geom_violin() +
   scale_y_log10() +
   geom_boxplot(width = 0.15,
                outlier.shape = NA) +
-  labs(x = "Tumour laterality",
-       y = "Tumour size (mm)",
-       title = "B. Tumour size by tumour side")
+  labs(x = "Tumor laterality",
+       y = "Tumor size (mm)",
+       title = "B. tumor size by tumor side")
 
 p_size
 ```
 
+This plot combined both a box plot and a violin plot reflecting the distribution of tumor sizes in patients and how the patients are spread across tumor sizes respectively. This plot shows us that for both left and right sided tumors, \~20mm is the most common tumor size and the median is around 23mm. The two distributions look nearly identical, so tumor size does not appear to differ in left and right sided tumors.
+
 ```{r}
 laterality_plot <- p_status + p_size +
-  plot_annotation(title = "Does tumour laterality relate to clinical severity?",
-                  caption = "METABRIC cohort; patients with missing values excluded per panel")
+  plot_annotation(title = "Does tumor laterality relate to clinical severity?",
+                  caption = str_c("METABRIC cohort; patients with ",
+                                  "missing values excluded per panel"))
 
 laterality_plot
 ```
