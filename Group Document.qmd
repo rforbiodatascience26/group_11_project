@@ -225,6 +225,8 @@ brca |>
         legend.position = "bottom")
 ```
 
+Across all cancer types and cellularity levels, **mastectomy** is consistently more common than breast-conserving surgery, accounting for roughly 55%–72% of patients in every group. Patients with **ILC** show the highest proportion of mastectomies across all three cellularity panels (peaking above 70% in moderate cellularity). Overall, higher tumor cellularity does not appear to drive a clear increase in mastectomy rates, as the surgery proportions remain fairly stable from low to high cellularity.
+
 ### Visualization 2 - Proportion Bar Plot
 
 ```{r}
@@ -253,7 +255,7 @@ brca |>
 
 Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumors.
 
-### Visualization 3 - Box plot + Jitter  
+### Visualization 3 - Box plot + Jitter
 
 ```{r}
 plot_df <- brca |>
@@ -339,7 +341,7 @@ laterality_plot <- p_status + p_size +
 laterality_plot
 ```
 
-### Visualization 5 - Forest Plot 
+### Visualization 5 - Forest Plot
 
 To see how age, mutation burden, and treatment intensity affect survival across different breast cancer subtypes, we fit separate logistic regression models (`glm()`) for each PAM50 subtype using `purrr` and plotted the resulting Odds Ratios and 95% confidence intervals.
 
