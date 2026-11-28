@@ -27,7 +27,7 @@ brca <- read_csv(here("data", "brca_augment.csv"),
 ### Visualization 1 - Bar Plot
 
 ```{r}
-brca |>
+vis_1 <- brca |>
   drop_na(type_of_breast_surgery,
           cancer_type_short,
           cellularity) |>
@@ -51,3 +51,10 @@ brca |>
 ```
 
 Across all cancer types and cellularity levels, **mastectomy** is consistently more common than breast-conserving surgery, accounting for roughly 55%–72% of patients in every group. Patients with **ILC** show the highest proportion of mastectomies across all three cellularity panels (peaking above 70% in moderate cellularity). Overall, higher tumor cellularity does not appear to drive a clear increase in mastectomy rates, as the surgery proportions remain fairly stable from low to high cellularity.
+
+## Saving the Plot
+
+```{r}
+ggsave(filename = here("results", "04_key_plot_1.png"),
+       plot = vis_1, width = 9, height = 7, dpi = 300)
+```

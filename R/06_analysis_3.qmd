@@ -35,7 +35,7 @@ plot_df <- brca |>
     cluster_label = fct_reorder(cluster_label, mutation_count, .fun = median)
   )
 
-ggplot(plot_df, aes(cluster_label, mutation_count)) +
+vis_3 <- ggplot(plot_df, aes(cluster_label, mutation_count)) +
   geom_jitter(aes(colour = mutation_burden_group), width = 0.25, alpha = 0.35, size = 0.9) +
   geom_boxplot(outlier.shape = NA, fill = NA, colour = "grey20", width = 0.55) +
   stat_summary(fun = median, geom = "point", shape = 23, size = 3, fill = "white") +
@@ -55,6 +55,14 @@ ggplot(plot_df, aes(cluster_label, mutation_count)) +
     plot.title = element_text(face = "bold"),
     axis.text = element_text(size = 10)
   )
+vis_3
 ```
 
 Cluster 4ER+ and 6 have the lowest mutation count. Patient characteristics differ most in cluster 4ER- as the box is the biggest. The mutation counts of all the clusters are very similar so its not possible to determine which cluster is genomically unstable.
+
+## Saving the Plot
+
+```{r}
+ggsave(filename = here("results", "06_key_plot_3.png"),
+       plot = vis_3, width = 9, height = 7, dpi = 300)
+```

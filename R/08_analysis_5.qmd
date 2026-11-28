@@ -1,0 +1,125 @@
+---
+title: "08_analysis_5"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse") 
+library("janitor") 
+library("patchwork") 
+library("broom") 
+library("curl") 
+library("here")
+```
+
+## Loading Augmented File
+
+```{r}
+brca <- read_csv(here("data", "brca_augment.csv"),                    
+                 na = c("", "NA", "N/A", "?", "null"))
+```
+
+## Visualization
+
+### Visualization 5 - Forest Plot
+
+To see how age, mutation burden, and treatment intensity affect survival across different breast cancer subtypes, we fit separate logistic regression models (`glm()`) for each PAM50 subtype using `purrr` and plotted the resulting Odds Ratios and 95% confidence intervals.
+
+We adapted the functional programming workflow from Lab 6 (`nest()`, `map()`, and `unnest()`) for this. Instead of splitting the data across thousands of genes, we nested the dataset into six groups by `pam50_subtype` and fit a separate model to each using `purrr`. In Lab 6, the outcome was continuous, so linear regression (`lm()`) was used. Here, our survival outcome (`event_os`) is binary (`1 = Deceased`, `0 = Living`), so we used logistic regression (`glm(..., family = binomial)`). We also set `exponentiate = TRUE` inside `broom::tidy()` to convert raw log-odds into Odds Ratios, which are much easier to interpret. Finally, while a volcano plot works well in Lab 6 for screening thousands of genes at once, a forest plot (`geom_linerange()` + `geom_point()`) is a better choice here. With only 18 subtype-level estimates, a forest plot lets us directly compare exact effect sizes and 95% confidence intervals side-by-side against the dashed neutral line (`OR = 1`).
+
+Any point to the right of the dashed line shows higher odds of mortality, while points to the left indicate lower odds, with horizontal bars showing statistical certainty.
+
+```{r}
+#| fig-width: 7
+#| fig-height: 5
+#| warning: false
+#| message: false
+
+# Fit logistic regression models predicting mortality across PAM50 subtypes
+subtype_models <- brca |>
+  filter(!is.na(pam50_subtype),
+         pam50_subtype != "NC") |>
+  drop_na(event_os,
+          treatment_n,
+          mutation_count,
+          age_at_diagnosis) |>
+  group_by(pam50_subtype) |>
+  nest() |>
+  mutate(
+    model = map(data,
+                ~ glm(event_os ~ age_at_diagnosis + mutation_count + treatment_n,
+                      data = .x,
+                      family = binomial)),
+    tidied = map(model,
+                 ~ tidy(.x,
+                        conf.int = TRUE,
+                        exponentiate = TRUE))
+  ) |>
+  unnest(tidied) |>
+  filter(term != "(Intercept)") |>
+  mutate(
+    term_clean = factor(
+      case_when(
+        term == "age_at_diagnosis" ~ "Age at Diagnosis\n(per year)",
+        term == "mutation_count" ~ "Mutation Count\n(per mutation)",
+        term == "treatment_n" ~ "Treatment Burden\n(per therapy)",
+        TRUE ~ term
+      ),
+      levels = c(
+        "Treatment Burden\n(per therapy)",
+        "Mutation Count\n(per mutation)",
+        "Age at Diagnosis\n(per year)"
+      )
+    )
+  )
+
+# Forest plot of odds ratios and 95% confidence intervals across PAM50 subtypes
+vis_7 <- subtype_models |>
+  ggplot(aes(x = estimate,
+             y = term_clean,
+             color = pam50_subtype)) +
+  geom_vline(xintercept = 1,
+             linetype = "dashed",
+             color = "grey45") +
+  geom_linerange(aes(xmin = conf.low,
+                     xmax = conf.high),
+                 position = position_dodge(width = 0.7),
+                 linewidth = 0.8) +
+  geom_point(position = position_dodge(width = 0.7),
+             size = 2.5) +
+  scale_x_log10(breaks = c(0.6, 0.8, 1.0, 1.2, 1.5, 1.8)) +
+  scale_color_viridis_d(name = "Subtype:",
+                        end = 0.9) +
+  guides(color = guide_legend(nrow = 2,
+                              byrow = TRUE)) +
+  labs(
+    title = "Mortality Predictors Across PAM50 Subtypes",
+    subtitle = "Odds ratios (95% CI) from logistic regression; dashed line: OR = 1",
+    x = "Odds Ratio (log10 scale)",
+    y = NULL,
+    caption = "Source: METABRIC Cohort | Outcome: Overall Mortality (1 = Deceased)"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(face = "bold"),
+    legend.position = "top",
+    legend.justification = "left",
+    panel.grid.minor = element_blank()
+  )
+vis_7
+```
+
+Results:
+
+Across every subtype, older age at diagnosis consistently increases mortality risk (`OR = 1.03–1.09` per year), whereas mutation count has little effect except in Normal-like tumors (`OR = 1.12`, 95% CI: `1.01–1.27`). Most notably, higher cumulative treatment burden seems to significantly mortality odds in LumA patients (`OR = 0.72`, 95% CI: `0.57–0.89`), suggesting that LumA tumors respond especially well to combined therapies compared to more aggressive subtypes like Her2 or claudin-low, where the confidence intervals cross 1.
+
+## Saving the Plot
+
+```{r}
+ggsave(filename = here("results", "08_key_plot_7.png"),
+       plot = vis_7, width = 9, height = 7, dpi = 300)
+```

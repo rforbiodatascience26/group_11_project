@@ -161,7 +161,7 @@ dbl (13): age_at_diagnosis, cohort, neoplasm_histologic_grade, lymph_nodes_p...
 <section id="visualization-1---bar-plot" class="level3">
 <h3 class="anchored" data-anchor-id="visualization-1---bar-plot">Visualization 1 - Bar Plot</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>brca <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>vis_1 <span class="ot">&lt;-</span> brca <span class="sc">|&gt;</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(type_of_breast_surgery,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>          cancer_type_short,</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>          cellularity) <span class="sc">|&gt;</span></span>
@@ -182,16 +182,16 @@ dbl (13): age_at_diagnosis, cohort, neoplasm_histologic_grade, lymph_nodes_p...
 <span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">angle =</span> <span class="dv">30</span>,</span>
 <span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">hjust =</span> <span class="dv">1</span>),</span>
 <span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="04_analysis_1_files/figure-html/unnamed-chunk-3-1.svg" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
 </div>
 <p>Across all cancer types and cellularity levels, <strong>mastectomy</strong> is consistently more common than breast-conserving surgery, accounting for roughly 55%–72% of patients in every group. Patients with <strong>ILC</strong> show the highest proportion of mastectomies across all three cellularity panels (peaking above 70% in moderate cellularity). Overall, higher tumor cellularity does not appear to drive a clear increase in mastectomy rates, as the surgery proportions remain fairly stable from low to high cellularity.</p>
 </section>
+</section>
+<section id="saving-the-plot" class="level2">
+<h2 class="anchored" data-anchor-id="saving-the-plot">Saving the Plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="at">filename =</span> <span class="fu">here</span>(<span class="st">"results"</span>, <span class="st">"05_key_plot_1.png"</span>),</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> vis_1, <span class="at">width =</span> <span class="dv">9</span>, <span class="at">height =</span> <span class="dv">7</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 
 </main>

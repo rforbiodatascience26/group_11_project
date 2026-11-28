@@ -27,7 +27,7 @@ brca <- read_csv(here("data", "brca_augment.csv"),
 ### Visualization 4 - Box Plot + Violin Plot
 
 ```{r}
-p_status <- brca |>
+vis_4 <- brca |>
   filter(!is.na(primary_tumor_laterality),
          !is.na(vital_status)) |>
   ggplot(aes(x = primary_tumor_laterality,
@@ -42,13 +42,13 @@ p_status <- brca |>
   theme(legend.position = "bottom",
         legend.title.position = "top")
 
-p_status
+vis_4
 ```
 
 This bar graph compares the vital status of patients having left-sided tumors vs right-sided tumors. From the figure, we can interpret that the patients with left-sided tumors have a slightly higher mortality rate from the disease itself (not external factors). However, this difference is small and does not necessarily indicate any meaningful or conclusive link between severity and laterality of the tumor.
 
 ```{r}
-p_size <- brca |>
+vis_5 <- brca |>
   filter(!is.na(primary_tumor_laterality),
          !is.na(tumor_size)) |>
   ggplot(aes(x = primary_tumor_laterality,
@@ -61,16 +61,29 @@ p_size <- brca |>
        y = "Tumor size (mm)",
        title = "B. tumor size by tumor side")
 
-p_size
+vis_5
 ```
 
 This plot combined both a box plot and a violin plot reflecting the distribution of tumor sizes in patients and how the patients are spread across tumor sizes respectively. This plot shows us that for both left and right sided tumors, \~20mm is the most common tumor size and the median is around 23mm. The two distributions look nearly identical, so tumor size does not appear to differ in left and right sided tumors.
 
 ```{r}
-laterality_plot <- p_status + p_size +
+vis_6 <- vis_4 + vis_5 +
   plot_annotation(title = "Does tumor laterality relate to clinical severity?",
                   caption = str_c("METABRIC cohort; patients with ",
                                   "missing values excluded per panel"))
 
-laterality_plot
+vis_6
+```
+
+## Saving the Plot
+
+```{r}
+ggsave(filename = here("results", "07_key_plot_4.png"),
+       plot = vis_4, width = 9, height = 7, dpi = 300)
+
+ggsave(filename = here("results", "07_key_plot_5.png"),
+       plot = vis_5, width = 9, height = 7, dpi = 300)
+
+ggsave(filename = here("results", "07_key_plot_6.png"),
+       plot = vis_6, width = 9, height = 7, dpi = 300)
 ```

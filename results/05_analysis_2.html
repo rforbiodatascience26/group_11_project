@@ -161,7 +161,7 @@ dbl (13): age_at_diagnosis, cohort, neoplasm_histologic_grade, lymph_nodes_p...
 <section id="visualization-2---proportion-bar-plot" class="level3">
 <h3 class="anchored" data-anchor-id="visualization-2---proportion-bar-plot">Visualization 2 - Proportion Bar Plot</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>brca <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>vis_2 <span class="ot">&lt;-</span> brca <span class="sc">|&gt;</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(receptor_profile),</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(inferred_menopausal_state),</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(hormone_therapy)) <span class="sc">|&gt;</span></span>
@@ -180,16 +180,16 @@ dbl (13): age_at_diagnosis, cohort, neoplasm_histologic_grade, lymph_nodes_p...
 <span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Hormone therapy"</span>,</span>
 <span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Source: METABRIC"</span>) <span class="sc">+</span></span>
 <span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="05_analysis_2_files/figure-html/unnamed-chunk-3-1.svg" class="img-fluid figure-img" width="864"></p>
-</figure>
-</div>
-</div>
 </div>
 <p>Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumors.</p>
 </section>
+</section>
+<section id="saving-the-plot" class="level2">
+<h2 class="anchored" data-anchor-id="saving-the-plot">Saving the Plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="at">filename =</span> <span class="fu">here</span>(<span class="st">"results"</span>, <span class="st">"05_key_plot_2.png"</span>),</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> vis_2, <span class="at">width =</span> <span class="dv">9</span>, <span class="at">height =</span> <span class="dv">7</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 
 </main>

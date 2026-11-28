@@ -29,7 +29,7 @@ brca <- read_csv(here("data", "brca_augment.csv"),
 ```{r}
 #| fig-width: 9
 #| fig-height: 5
-brca |>
+vis_2 <- brca |>
   filter(!is.na(receptor_profile),
          !is.na(inferred_menopausal_state),
          !is.na(hormone_therapy)) |>
@@ -51,3 +51,10 @@ brca |>
 ```
 
 Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumors.
+
+## Saving the Plot
+
+```{r}
+ggsave(filename = here("results", "05_key_plot_2.png"),
+       plot = vis_2, width = 9, height = 7, dpi = 300)
+```
