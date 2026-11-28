@@ -1,0 +1,53 @@
+---
+title: "04_analysis1"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse")
+library("janitor")
+library("patchwork")
+library("broom")
+library("curl")
+library("here")
+```
+
+## Loading Augmented File
+
+```{r}
+brca <- read_csv(here("data", "brca_augment.csv"),
+                     na = c("", "NA", "N/A", "?", "null"))
+```
+
+## Visualization
+
+### Visualization 1 - Bar Plot
+
+```{r}
+brca |>
+  drop_na(type_of_breast_surgery,
+          cancer_type_short,
+          cellularity) |>
+  ggplot(aes(x = cancer_type_short,
+             fill = type_of_breast_surgery)) +
+  geom_bar(position = "fill",
+           width = 0.65,
+           color = "white") +
+  facet_wrap(~ cellularity) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c("plum", "lightpink")) +
+  labs(title = "Surgery Type by Cancer Type & Cellularity",
+       x = NULL,
+       y = "Patients (%)",
+       fill = "Surgery") +
+  theme_minimal(base_size = 10) +
+  theme(axis.text.x = element_text(size = 8,
+                                   angle = 30,
+                                   hjust = 1),
+        legend.position = "bottom")
+```
+
+Across all cancer types and cellularity levels, **mastectomy** is consistently more common than breast-conserving surgery, accounting for roughly 55%–72% of patients in every group. Patients with **ILC** show the highest proportion of mastectomies across all three cellularity panels (peaking above 70% in moderate cellularity). Overall, higher tumor cellularity does not appear to drive a clear increase in mastectomy rates, as the surgery proportions remain fairly stable from low to high cellularity.

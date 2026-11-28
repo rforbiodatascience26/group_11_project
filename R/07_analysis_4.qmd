@@ -1,0 +1,76 @@
+---
+title: "07_analysis_4"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse") 
+library("janitor") 
+library("patchwork") 
+library("broom") 
+library("curl") 
+library("here")
+```
+
+## Loading Augmented File
+
+```{r}
+brca <- read_csv(here("data", "brca_augment.csv"),                    
+                 na = c("", "NA", "N/A", "?", "null"))
+```
+
+## Visualization
+
+### Visualization 4 - Box Plot + Violin Plot
+
+```{r}
+p_status <- brca |>
+  filter(!is.na(primary_tumor_laterality),
+         !is.na(vital_status)) |>
+  ggplot(aes(x = primary_tumor_laterality,
+             fill = vital_status)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d() +
+  labs(x = "Tumor laterality",
+       y = "Proportion of patients",
+       fill = "Vital status",
+       title = "A. Vital status by tumor side") +
+  theme(legend.position = "bottom",
+        legend.title.position = "top")
+
+p_status
+```
+
+This bar graph compares the vital status of patients having left-sided tumors vs right-sided tumors. From the figure, we can interpret that the patients with left-sided tumors have a slightly higher mortality rate from the disease itself (not external factors). However, this difference is small and does not necessarily indicate any meaningful or conclusive link between severity and laterality of the tumor.
+
+```{r}
+p_size <- brca |>
+  filter(!is.na(primary_tumor_laterality),
+         !is.na(tumor_size)) |>
+  ggplot(aes(x = primary_tumor_laterality,
+             y = tumor_size)) +
+  geom_violin() +
+  scale_y_log10() +
+  geom_boxplot(width = 0.15,
+               outlier.shape = NA) +
+  labs(x = "Tumor laterality",
+       y = "Tumor size (mm)",
+       title = "B. tumor size by tumor side")
+
+p_size
+```
+
+This plot combined both a box plot and a violin plot reflecting the distribution of tumor sizes in patients and how the patients are spread across tumor sizes respectively. This plot shows us that for both left and right sided tumors, \~20mm is the most common tumor size and the median is around 23mm. The two distributions look nearly identical, so tumor size does not appear to differ in left and right sided tumors.
+
+```{r}
+laterality_plot <- p_status + p_size +
+  plot_annotation(title = "Does tumor laterality relate to clinical severity?",
+                  caption = str_c("METABRIC cohort; patients with ",
+                                  "missing values excluded per panel"))
+
+laterality_plot
+```

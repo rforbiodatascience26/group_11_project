@@ -1,0 +1,60 @@
+---
+title: "06_analysis_3"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse")
+library("janitor")
+library("patchwork")
+library("broom")
+library("curl")
+library("here")
+```
+
+## Loading Augmented File
+
+```{r}
+brca <- read_csv(here("data", "brca_augment.csv"),
+                     na = c("", "NA", "N/A", "?", "null"))
+```
+
+## Visualization
+
+### Visualization 3 - Box plot + Jitter
+
+```{r}
+plot_df <- brca |>
+  drop_na(integrative_cluster, mutation_count, mutation_burden_group) |>
+  add_count(integrative_cluster) |>
+  mutate(
+    cluster_label = paste0(integrative_cluster, " (n = ", n, ")"),
+    cluster_label = fct_reorder(cluster_label, mutation_count, .fun = median)
+  )
+
+ggplot(plot_df, aes(cluster_label, mutation_count)) +
+  geom_jitter(aes(colour = mutation_burden_group), width = 0.25, alpha = 0.35, size = 0.9) +
+  geom_boxplot(outlier.shape = NA, fill = NA, colour = "grey20", width = 0.55) +
+  stat_summary(fun = median, geom = "point", shape = 23, size = 3, fill = "white") +
+  scale_y_log10(breaks = c(1, 2, 5, 10, 20, 50)) +
+  scale_colour_viridis_d(name = "Mutation burden", end = 0.9) +
+  coord_flip() +
+  labs(
+    title = "Mutation count by integrative cluster",
+    subtitle = "Clusters ranked by median mutation count (diamond = median, log scale)",
+    x = NULL, y = "Mutation count (log10 scale)"
+  ) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold"),
+    axis.text = element_text(size = 10)
+  )
+```
+
+Cluster 4ER+ and 6 have the lowest mutation count. Patient characteristics differ most in cluster 4ER- as the box is the biggest. The mutation counts of all the clusters are very similar so its not possible to determine which cluster is genomically unstable.
