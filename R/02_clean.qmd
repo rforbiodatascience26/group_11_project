@@ -49,3 +49,9 @@ brca <- brca_raw |>
   # age groups
   mutate(age_group = cut(age_at_diagnosis, breaks = seq(20, 100, by = 10)))
 ```
+
+## Writing a new clean csv
+
+```{r}
+write_csv(brca, "../data/brca_clean.csv")
+```

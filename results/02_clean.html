@@ -170,6 +170,12 @@ dbl (10): Age at Diagnosis, Cohort, Neoplasm Histologic Grade, Lymph nodes e...
 <span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age_group =</span> <span class="fu">cut</span>(age_at_diagnosis, <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">20</span>, <span class="dv">100</span>, <span class="at">by =</span> <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
+<section id="writing-a-new-clean-csv" class="level2">
+<h2 class="anchored" data-anchor-id="writing-a-new-clean-csv">Writing a new clean csv</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(brca, <span class="st">"../data/brca_clean.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
 
 </main>
 <!-- /main column -->
