@@ -1,0 +1,137 @@
+---
+title: "03_augment"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse")
+library("janitor")
+library("patchwork")
+library("broom")
+library("curl")
+library("here")
+```
+
+## Loading Clean Data Set
+
+```{r}
+brca <- read_csv(here("data", "brca_clean.csv"),
+                     na = c("", "NA", "N/A", "?", "null"))
+```
+
+## Augmentation
+
+#### Augmentation 1
+
+This code groups the eight detailed cancer types into four simpler categories (`IDC`, `ILC`, `Mixed Ductal/Lobular`, and `Other`) in a new `cancer_type_short` column. It then converts the column into a factor with a set order and counts the number of patients in each group.
+
+```{r}
+brca <- brca |>
+  mutate(
+    cancer_type_short = case_when(
+      cancer_type_detailed == "Breast Invasive Ductal Carcinoma" ~ "IDC",
+      cancer_type_detailed == "Breast Invasive Lobular Carcinoma" ~ "ILC",
+      cancer_type_detailed == "Breast Mixed Ductal and Lobular Carcinoma" ~
+        "Mixed Ductal/Lobular",
+      .default = "Other"
+    ),
+    cancer_type_short = factor(
+      cancer_type_short,
+      levels = c("IDC", "Mixed Ductal/Lobular", "ILC", "Other")
+    )
+  )
+
+brca |>
+  count(cancer_type_short,
+        sort = TRUE)
+```
+
+#### Augmentation 2
+
+Creating a new variable that groups patients by receptor status, using the three columns `er_status`, `pr_status` and `her2_status`, each labelled "Positive" or "Negative". Patients with a positive HER2 status are labelled "HER2+". Patients negative for all three receptors are labelled "Triple-Negative". Patients who are HER2 negative and positive for ER or PR are labelled "HR+/HER2-". The result is converted using `factor()` into an ordered category. Patients with missing data are given "NA" because their group cannot be decided.
+
+```{r}
+# receptor_profile: HR+/HER2-, HER2+, Triple-Negative
+brca <- brca |>
+  mutate(receptor_profile = case_when(
+           her2_status == "Positive" ~ "HER2+",
+           er_status == "Negative" &
+             pr_status == "Negative" &
+             her2_status == "Negative" ~ "Triple-Negative",
+           (er_status == "Positive" | pr_status == "Positive") &
+             her2_status == "Negative" ~ "HR+/HER2-",
+           .default = NA_character_),
+         receptor_profile = factor(receptor_profile,
+                                   levels = c("HR+/HER2-",
+                                              "HER2+",
+                                              "Triple-Negative")))
+```
+
+#### Augmentation 3
+
+Creating a new variable how many therapies each patient has received. There are 3 therapies in the data set, hormone therapy, chemotherapy and radio therapy. Each of them are labelled as "Yes" or "No". Yes gives a true value (1) and No gives a false value (0). Adding these 3 will give the number of therapies from 0 to 3. That number is converted using a factor() into an ordered category labelled "None","Single","Double", "Triple". Patients with missing data will be given "NA" instead of "None" to ensure missing data is not confused with no treatment.
+
+```{r}
+brca <- brca |>
+  mutate(
+    treatment_n = (chemotherapy == "Yes") +
+                  (hormone_therapy == "Yes") +
+                  (radio_therapy == "Yes"),
+    treatment_burden = factor(treatment_n,
+                              levels = 0:3,
+                              labels = c("None", "Single", "Dual", "Triple"),
+                              ordered = TRUE)
+  )
+
+brca |> 
+  count(treatment_burden)
+```
+
+#### Augmentation 4
+
+The "mutation_count" column reflects the number of somatic mutations in each tumor, thereby signifying the genomic instability. We have categorized these raw values into ordered categories where "Low" signifies 1-3 mutations, "Moderate": 4-7 mutations, and "High": 8+ mutations. This new "mutation_burden_group" column was engineered to give an interpretable measurement of the mutational intensity and to use the categories as a convenient grouping factor in plots or summaries. The "mutation_count" column is retained to allow quantitative comparisons among different patients.
+
+```{r}
+brca <- brca |>
+  mutate(mutation_burden_group = cut(mutation_count,
+                                breaks = c(0, 3, 7, Inf),
+                                labels = c("Low", "Moderate", "High")))
+```
+
+We count patients per group (categorized based on their qualitative mutation burden) and show the minimum and maximum mutation count in each to ensure binning was executed correctly.
+
+```{r}
+brca |>
+  group_by(mutation_burden_group) |>
+  summarise(n_patients = n(),
+            min_mutations = min(mutation_count, 
+                      na.rm = TRUE),
+            max_mutations = max(mutation_count, 
+                      na.rm = TRUE))
+```
+
+#### Augmentation 5
+
+To get the survival variables ready for modeling, we created two new columns from the cleaned clinical data: `os_years` and `event_os`. Since overall survival was originally recorded in months, we divided `os_months` by 12 so the timeline is easier to interpret in years. We also converted the text labels in `os_status` into a simple binary outcome (`event_os`), coding deceased patients as `1` (`n = 1,144`) and living patients as `0` (`n = 837`), while keeping the `528` missing entries as `NA` so they are automatically excluded from our models.
+
+```{r}
+# Convert survival time to years and create binary mortality outcome
+brca <- brca |>
+  mutate(
+    os_years = os_months / 12,
+    event_os = case_when(
+      str_detect(os_status, regex("deceased|1", ignore_case = TRUE)) ~ 1,
+      str_detect(os_status, regex("living|0", ignore_case = TRUE)) ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+```
+
+## Writing a new augmentation file
+
+```{r}
+write_csv(brca, here("data", "brca_augment.csv"))
+```

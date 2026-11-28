@@ -7,22 +7,31 @@ editor: visual
 ## Loading Libraries
 
 ```{r}
-library(tidyverse)
-library(janitor)
+library("tidyverse")
+library("janitor")
 library("patchwork")
 library("broom")
+library("curl")
 ```
 
 ## Loading the data
 
 ```{r}
-brca_raw <- read_csv("data/Breast Cancer METABRIC.csv",
+base_url    <- "https://github.com/"
+target_file <- "rforbiodatascience26/group_11_project/raw/main/data/Breast%20Cancer%20METABRIC.csv"
+output_file <- "data/Breast_Cancer_METABRIC.csv"
+
+curl_download(url = str_c(base_url,
+                          target_file),
+              destfile = output_file)
+
+brca_raw <- read_csv(output_file,
                      na = c("", "NA", "N/A", "?", "null"))
 ```
 
 ## Cleaning Data
 
-This step takes the raw METABRIC data and makes it ready for analysis. First, `clean_names()` and `rename()` give the columns short, consistent names without spaces, such as `age_at_diagnosis` and `os_months`. Next, the `Positve` typo in the ER (IHC) column is corrected to `Positive`, and the `sex` and `cancer_type` columns are dropped because they hold almost the same value for every patient and add no information. Then the categorical variables (such as ER status, HER2 status, chemotherapy and tumour subtype) are converted to factors so R treats them as groups rather than text. Cohort, histologic grade and tumour stage, which were stored as numeric codes, are converted too, with grade and stage as ordered factors and cellularity ordered Low \< Moderate \< High. Finally, a new `age_group` column bins patients’ ages into 10-year intervals with `cut()`. Missing values are left as `NA`, and no rows are removed.
+This step takes the raw METABRIC data and makes it ready for analysis. First, `clean_names()` and `rename()` give the columns short, consistent names without spaces, such as `age_at_diagnosis` and `os_months`. Next, the `Positve` typo in the ER (IHC) column is corrected to `Positive`, and the `sex` and `cancer_type` columns are dropped because they hold almost the same value for every patient and add no information. Then the categorical variables (such as ER status, HER2 status, chemotherapy and tumor subtype) are converted to factors so R treats them as groups rather than text. Cohort, histologic grade and tumor stage, which were stored as numeric codes, are converted too, with grade and stage as ordered factors and cellularity ordered Low \< Moderate \< High. Finally, a new `age_group` column bins patients’ ages into 10-year intervals with `cut()`. Missing values are left as `NA`, and no rows are removed.
 
 ```{r}
 # 2. Clean
@@ -78,9 +87,9 @@ write_csv(brca, "data/brca_clean.csv")
 view(brca)
 ```
 
-## Visual
+## Augmentation
 
-### Bharati
+### Augmentation 1
 
 This code groups the eight detailed cancer types into four simpler categories (`IDC`, `ILC`, `Mixed Ductal/Lobular`, and `Other`) in a new `cancer_type_short` column. It then converts the column into a factor with a set order and counts the number of patients in each of the groups.
 
@@ -105,7 +114,7 @@ brca |>
         sort = TRUE)
 ```
 
-### Pratyush
+### Augmentation 2
 
 Creating a new variable that groups patients by receptor status, using the three columns `er_status`, `pr_status` and `her2_status`, each labelled "Positive" or "Negative". Patients with a positive HER2 status are labelled "HER2+". Patients negative for all three receptors are labelled "Triple-Negative". Patients who are HER2 negative and positive for ER or PR are labelled "HR+/HER2-". The result is converted using `factor()` into an ordered category. Patients with missing data are given "NA" because their group cannot be decided.
 
@@ -126,7 +135,7 @@ brca <- brca |>
                                               "Triple-Negative")))
 ```
 
-### Sanjay
+### Augmentation 3
 
 Creating a new variable how many therapies each patient has received. There are 3 therapies in the data set, hormone therapy, chemotherapy and radio therapy. Each of them are labelled as "Yes" or "No". Yes gives a true value (1) and No gives a false value (0). Adding these 3 will give the number of therapies from 0 to 3. That number is converted using a factor() into an ordered category labelled "None","Single","Double", "Triple". Patients with missing data will be given "NA" instead of "None" to ensure missing data is not confused with no treatment.
 
@@ -148,40 +157,30 @@ brca |>
   count(treatment_burden)
 ```
 
-### Jithin
+### Augmentation 4
 
 The "mutation_count" column reflects the number of somatic mutations in each tumor, thereby signifying the genomic instability. We have categorized these raw values into ordered categories where "Low" signifies 1-3 mutations, "Moderate": 4-7 mutations, and "High": 8+ mutations. This new "mutation_burden_group" column was engineered to give an interpretable measurement of the mutational intensity and to use the categories as a convenient grouping factor in plots or summaries. The "mutation_count" column is retained to allow quantitative comparisons among different patients.
 
 ```{r}
 brca <- brca |>
-  mutate(
-    mutation_burden_group = case_when( mutation_count >= 8 ~ "High",
-                                       mutation_count >= 4 ~ "Moderate",
-                                       mutation_count >= 1 ~ "Low",
-                                       .default = NA_character_
-                                       ),
-    mutation_burden_group = cut(mutation_count,
+  mutate(mutation_burden_group = cut(mutation_count,
                                 breaks = c(0, 3, 7, Inf),
-                                labels = c("Low", "Moderate", "High")
-                                )
-    )
-
-view(brca)
+                                labels = c("Low", "Moderate", "High")))
 ```
 
-Grouping and summarizing the data based on the mutated terms allows us to confirm whether the mutation has been executed properly based on the output.
+We count patients per group (categorized based on their qualitative mutation burden) and show the minimum and maximum mutation count in each to ensure binning was executed correctly.
 
 ```{r}
 brca |>
   group_by(mutation_burden_group) |>
-  summarise(
-    n   = n(),
-    min = min(mutation_count, na.rm = TRUE),
-    max = max(mutation_count, na.rm = TRUE)
-  )
+  summarise(n_patients = n(),
+            min_mutations = min(mutation_count, 
+                      na.rm = TRUE),
+            max_mutations = max(mutation_count, 
+                      na.rm = TRUE))
 ```
 
-### Maria
+### Augmentation 5
 
 To get the survival variables ready for modeling, we created two new columns from the cleaned clinical data: `os_years` and `event_os`. Since overall survival was originally recorded in months, we divided `os_months` by 12 so the timeline is easier to interpret in years. We also converted the text labels in `os_status` into a simple binary outcome (`event_os`), coding deceased patients as `1` (`n = 1,144`) and living patients as `0` (`n = 837`), while keeping the `528` missing entries as `NA` so they are automatically excluded from our models.
 
@@ -198,9 +197,9 @@ brca <- brca |>
   )
 ```
 
-## Graphs
+## Visualization
 
-### Bharati
+### Visualization 1 - Bar Plot
 
 ```{r}
 brca |>
@@ -226,7 +225,7 @@ brca |>
         legend.position = "bottom")
 ```
 
-### Pratyush
+### Visualization 2 - Proportion Bar Plot
 
 ```{r}
 #| fig-width: 9
@@ -254,95 +253,93 @@ brca |>
 
 Post-menopausal patients received hormone therapy more often than pre-menopausal patients in all three receptor groups. Treatment was most common in HR+/HER2- patients and least common in Triple-Negative patients, which fits with hormone therapy targeting hormone-receptor-positive tumors.
 
-### Sanjay
+### Visualization 3 - Box plot + Jitter  
 
 ```{r}
 plot_df <- brca |>
-  filter(!is.na(integrative_cluster), !is.na(mutation_count),
-         !is.na(mutation_burden_group)) |>
-  group_by(integrative_cluster) |>
-  mutate(cluster_label = paste0(integrative_cluster, " (n = ", n(), ")")) |>
-  ungroup()
+  drop_na(integrative_cluster, mutation_count, mutation_burden_group) |>
+  add_count(integrative_cluster) |>
+  mutate(
+    cluster_label = paste0(integrative_cluster, " (n = ", n, ")"),
+    cluster_label = fct_reorder(cluster_label, mutation_count, .fun = median)
+  )
 
-ggplot(plot_df,
-       aes(x = fct_reorder(cluster_label, mutation_count, .fun = median),
-           y = mutation_count)) +
-  geom_jitter(aes(colour = mutation_burden_group),
-              width = 0.25, alpha = 0.35, size = 0.9) +
-  geom_boxplot(outlier.shape = NA, fill = NA, colour = "grey20",
-               width = 0.55, linewidth = 0.6) +
-  stat_summary(fun = median, geom = "point", shape = 23,
-               size = 3, fill = "white", colour = "black") +
+ggplot(plot_df, aes(cluster_label, mutation_count)) +
+  geom_jitter(aes(colour = mutation_burden_group), width = 0.25, alpha = 0.35, size = 0.9) +
+  geom_boxplot(outlier.shape = NA, fill = NA, colour = "grey20", width = 0.55) +
+  stat_summary(fun = median, geom = "point", shape = 23, size = 3, fill = "white") +
   scale_y_log10(breaks = c(1, 2, 5, 10, 20, 50)) +
   scale_colour_viridis_d(name = "Mutation burden", end = 0.9) +
   coord_flip() +
-  labs(title = "Mutation count by integrative cluster",
-       subtitle = "Clusters ranked by median mutation count (diamond = median, log scale)",
-       x = NULL, y = "Mutation count (log10 scale)") +
+  labs(
+    title = "Mutation count by integrative cluster",
+    subtitle = "Clusters ranked by median mutation count (diamond = median, log scale)",
+    x = NULL, y = "Mutation count (log10 scale)"
+  ) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom",
-        panel.grid.minor = element_blank(),
-        plot.title = element_text(face = "bold"),
-        axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold"),
+    axis.text = element_text(size = 10)
+  )
 ```
 
-### Jithin
+Cluster 4ER+ and 6 have the lowest mutation count. Patient characteristics differ most in cluster 4ER- as the box is the biggest. The mutation counts of all the clusters are very similar so its not possible to determine which cluster is genomically unstable.
+
+### Visualization 4 - Box Plot + Violin Plot
 
 ```{r}
 p_status <- brca |>
   filter(!is.na(primary_tumor_laterality),
-         !is.na(vital_status)
-         ) |>
+         !is.na(vital_status)) |>
   ggplot(aes(x = primary_tumor_laterality,
-             fill = vital_status
-             )
-         ) +
+             fill = vital_status)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_viridis_d() +
-  labs(x = "Tumour laterality",
+  labs(x = "Tumor laterality",
        y = "Proportion of patients",
        fill = "Vital status",
-       title = "A. Vital status by tumour side"
-       )
+       title = "A. Vital status by tumor side") +
+  theme(legend.position = "bottom",
+        legend.title.position = "top")
 
 p_status
 ```
 
+This bar graph compares the vital status of patients having left-sided tumors vs right-sided tumors. From the figure, we can interpret that the patients with left-sided tumors have a slightly higher mortality rate from the disease itself (not external factors). However, this difference is small and does not necessarily indicate any meaningful or conclusive link between severity and laterality of the tumor.
+
 ```{r}
 p_size <- brca |>
   filter(!is.na(primary_tumor_laterality),
-         !is.na(vital_status)
-         ) |>
+         !is.na(tumor_size)) |>
   ggplot(aes(x = primary_tumor_laterality,
-             y = tumor_size
-             )
-         ) +
+             y = tumor_size)) +
   geom_violin() +
   scale_y_log10() +
   geom_boxplot(width = 0.15,
-               outlier.shape = NA
-               ) +
-  labs(x = "Tumour laterality",
-       y = "Tumour size (mm)",
-       title = "B. Tumour size by tumour side"
-       )
+               outlier.shape = NA) +
+  labs(x = "Tumor laterality",
+       y = "Tumor size (mm)",
+       title = "B. tumor size by tumor side")
 
 p_size
 ```
 
+This plot combined both a box plot and a violin plot reflecting the distribution of tumor sizes in patients and how the patients are spread across tumor sizes respectively. This plot shows us that for both left and right sided tumors, \~20mm is the most common tumor size and the median is around 23mm. The two distributions look nearly identical, so tumor size does not appear to differ in left and right sided tumors.
+
 ```{r}
 laterality_plot <- p_status + p_size +
-  plot_annotation(title = "Does tumour laterality relate to clinical severity?",
-                  caption = "METABRIC cohort; patients with missing values excluded per panel"
-                  )
+  plot_annotation(title = "Does tumor laterality relate to clinical severity?",
+                  caption = str_c("METABRIC cohort; patients with ",
+                                  "missing values excluded per panel"))
 
 laterality_plot
 ```
 
-### Maria
+### Visualization 5 - Forest Plot 
 
 To see how age, mutation burden, and treatment intensity affect survival across different breast cancer subtypes, we fit separate logistic regression models (`glm()`) for each PAM50 subtype using `purrr` and plotted the resulting Odds Ratios and 95% confidence intervals.
 

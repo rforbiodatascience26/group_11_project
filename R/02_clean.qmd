@@ -1,0 +1,57 @@
+---
+title: "02_clean"
+format: html
+editor: visual
+---
+
+## Cleaning Data
+
+This step takes the raw METABRIC data and makes it ready for analysis. First, `clean_names()` and `rename()` give the columns short, consistent names without spaces, such as `age_at_diagnosis` and `os_months`. Next, the `Positve` typo in the ER (IHC) column is corrected to `Positive`, and the `sex` and `cancer_type` columns are dropped because they hold almost the same value for every patient and add no information. Then the categorical variables (such as ER status, HER2 status, chemotherapy and tumor subtype) are converted to factors so R treats them as groups rather than text. Cohort, histologic grade and tumor stage, which were stored as numeric codes, are converted too, with grade and stage as ordered factors and cellularity ordered Low \< Moderate \< High. Finally, a new `age_group` column bins patients’ ages into 10-year intervals with `cut()`. Missing values are left as `NA`, and no rows are removed.
+
+```{r}
+#1 Load Libraries
+library("tidyverse")
+library("janitor")
+
+brca_raw <- read_csv("../data/Breast_Cancer_METABRIC.csv",
+                     na = c("", "NA", "N/A", "?", "null"))
+# 2. Clean
+brca <- brca_raw |>
+  clean_names() |>                       # "Age at Diagnosis" -> age_at_diagnosis
+  rename(er_status_ihc  = er_status_measured_by_ihc,
+         her2_status_snp6 = her2_status_measured_by_snp6,
+         pam50_subtype  = pam50_claudin_low_subtype,
+         lymph_nodes_pos = lymph_nodes_examined_positive,
+         os_months      = overall_survival_months,
+         os_status      = overall_survival_status,
+         rfs_months     = relapse_free_status_months,
+         rfs_status     = relapse_free_status,
+         vital_status   = patients_vital_status) |>
+  # fix typo in ER (IHC)
+  mutate(er_status_ihc = str_replace(er_status_ihc, "Positve", "Positive")) |>
+  # drop constant / near-constant columns
+  select(-sex, -cancer_type) |>
+  # categorical variables -> factors
+  mutate(across(c(type_of_breast_surgery, cellularity, chemotherapy,
+                  pam50_subtype, er_status_ihc, er_status, her2_status_snp6,
+                  her2_status, hormone_therapy, inferred_menopausal_state,
+                  integrative_cluster, primary_tumor_laterality,
+                  pr_status, radio_therapy, os_status, rfs_status,
+                  vital_status, x3_gene_classifier_subtype,
+                  tumor_other_histologic_subtype, oncotree_code,
+                  cancer_type_detailed),
+                factor),
+         cohort = factor(cohort),
+         neoplasm_histologic_grade = factor(neoplasm_histologic_grade, ordered = TRUE),
+         tumor_stage = factor(tumor_stage, ordered = TRUE),
+         cellularity = factor(cellularity, levels = c("Low", "Moderate", "High"),
+                              ordered = TRUE)) |>
+  # age groups
+  mutate(age_group = cut(age_at_diagnosis, breaks = seq(20, 100, by = 10)))
+```
+
+## Writing a new clean csv
+
+```{r}
+write_csv(brca, "../data/brca_clean.csv")
+```

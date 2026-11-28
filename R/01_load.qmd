@@ -1,0 +1,30 @@
+---
+title: "01_load"
+format: html
+editor: visual
+---
+
+## Loading Libraries
+
+```{r}
+library("tidyverse")
+library("janitor")
+library("patchwork")
+library("broom")
+library("curl")
+```
+
+## Loading the data
+
+```{r}
+base_url    <- "https://github.com/"
+target_file <- "rforbiodatascience26/group_11_project/raw/main/data/Breast%20Cancer%20METABRIC.csv"
+output_file <- "../data/Breast_Cancer_METABRIC.csv"
+
+curl_download(url = str_c(base_url,
+                          target_file),
+              destfile = output_file)
+
+brca_raw <- read_csv(output_file,
+                     na = c("", "NA", "N/A", "?", "null"))
+```
