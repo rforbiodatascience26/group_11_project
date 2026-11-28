@@ -82,7 +82,7 @@ view(brca)
 
 ### Bharati
 
-This code groups the eight detailed cancer types into four simpler categories (`IDC`, `ILC`, `Mixed Ductal/Lobular`, and `Other`) in a new `cancer_type_short` column. It then converts the column into a factor with a set order and counts the number of patients in each group.
+This code groups the eight detailed cancer types into four simpler categories (`IDC`, `ILC`, `Mixed Ductal/Lobular`, and `Other`) in a new `cancer_type_short` column. It then converts the column into a factor with a set order and counts the number of patients in each of the groups.
 
 ```{r}
 brca <- brca |>
